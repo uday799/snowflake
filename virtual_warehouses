@@ -1,0 +1,192 @@
+
+
+--set context 
+
+-- database_name.schema_name.object_name
+
+select * from customer;
+
+select * from SNOWFLAKE_SAMPLE_DATA.TPCH_SF1.customer limit 1000;
+
+show warehouses;
+
+--create virtual warehouse syntax
+
+CREATE OR ALTER WAREHOUSE <name>
+     [ [ WITH ] objectProperties ]
+     [ objectParams ]
+
+objectProperties ::=
+  WAREHOUSE_TYPE = { STANDARD | 'SNOWPARK-OPTIMIZED' }
+  WAREHOUSE_SIZE = { XSMALL | SMALL | MEDIUM | LARGE | XLARGE | XXLARGE | XXXLARGE | X4LARGE | X5LARGE | X6LARGE }
+  GENERATION = { '1' | '2' }
+  RESOURCE_CONSTRAINT = { STANDARD_GEN_1 | STANDARD_GEN_2 | MEMORY_1X | MEMORY_1X_x86 | MEMORY_16X | MEMORY_16X_x86 | MEMORY_64X | MEMORY_64X_x86 }
+  MAX_CLUSTER_COUNT = <num>
+  MIN_CLUSTER_COUNT = <num>
+  SCALING_POLICY = { STANDARD | ECONOMY }
+  AUTO_SUSPEND = { <num> | NULL }
+  AUTO_RESUME = { TRUE | FALSE }
+  INITIALLY_SUSPENDED = { TRUE | FALSE }
+  RESOURCE_MONITOR = <monitor_name>
+  COMMENT = '<string_literal>'
+  ENABLE_QUERY_ACCELERATION = { TRUE | FALSE }
+  QUERY_ACCELERATION_MAX_SCALE_FACTOR = <num>
+
+objectParams ::=
+  MAX_CONCURRENCY_LEVEL = <num>
+  STATEMENT_QUEUED_TIMEOUT_IN_SECONDS = <num>
+  STATEMENT_TIMEOUT_IN_SECONDS = <num>
+  
+  
+--with simplified, normal usage  
+
+CREATE [ OR REPLACE ] WAREHOUSE warehouse_name
+    WITH
+    WAREHOUSE_TYPE = { STANDARD | SNOWPARK-OPTIMIZED }
+    WAREHOUSE_SIZE = { XSMALL | SMALL | MEDIUM | LARGE | XLARGE | XXLARGE | XXXLARGE | X4LARGE | X5LARGE | X6LARGE }
+	GENERATION = { '1' | '2' }
+    MIN_CLUSTER_COUNT = integer
+    MAX_CLUSTER_COUNT = integer
+    SCALING_POLICY = { STANDARD | ECONOMY }
+    AUTO_SUSPEND = integer in seconds
+    AUTO_RESUME = { TRUE | FALSE }
+    INITIALLY_SUSPENDED = { TRUE | FALSE }
+	COMMENT = 'optional comment';
+	
+
+-- create warehouse by using Snowsight UI
+
+--create warehouse by using SQL query
+
+create warehouse my_second_wh
+warehouse_size='Medium'
+auto_suspend=180
+auto_resume=TRUE
+initially_suspended=TRUE;
+
+create or replace warehouse my_third_wh
+warehouse_size='large'
+auto_suspend=300
+auto_resume=TRUE
+initially_suspended=TRUE
+min_cluster_count=1
+max_cluster_count=5
+scaling_policy='ECONOMY';
+
+drop warehouse my_third_wh;
+
+--Create an X-Large warehouse:
+
+CREATE OR REPLACE WAREHOUSE my_wh WITH WAREHOUSE_SIZE = 'X-LARGE';
+
+--Create a Large warehouse in a suspended state:
+
+CREATE OR REPLACE WAREHOUSE my_wh WAREHOUSE_SIZE = LARGE INITIALLY_SUSPENDED = TRUE;
+
+--Create an X-Large Snowpark-optimized warehouse named so_warehouse with 256 GB memory for Snowpark workloads that require x86 Python:
+
+CREATE WAREHOUSE so_warehouse WITH
+  WAREHOUSE_TYPE = 'SNOWPARK-OPTIMIZED'
+  WAREHOUSE_SIZE = XLARGE
+  RESOURCE_CONSTRAINT = 'MEMORY_16X_x86';
+  
+ --meaning of 
+  -- RESOURCE_CONSTRAINT = 'MEMORY_16X_x86';  	
+  -- 16 times more memory than the standard warehouse for the same size, using x86 architecture
+  -- This helps when your query fails with: Out of memory errors
+
+-- Create a new warehouse with GENERATION = '1'
+CREATE OR ALTER WAREHOUSE test_gen_warehouse
+  WITH WAREHOUSE_SIZE = XSMALL
+    GENERATION = '1'
+    AUTO_SUSPEND = 60
+    INITIALLY_SUSPENDED = TRUE;
+
+-- Verify that it was created
+SHOW WAREHOUSES LIKE 'test_gen_warehouse'
+  
+-- Alter it to GENERATION = '2'
+CREATE OR ALTER WAREHOUSE test_gen_warehouse
+  WITH WAREHOUSE_SIZE = SMALL
+    GENERATION = '2'
+    AUTO_SUSPEND = 120;
+
+-- Verify that it was altered
+SHOW WAREHOUSES LIKE 'test_gen_warehouse'
+  
+
+-- Clean up when done
+DROP WAREHOUSE test_gen_warehouse;
+
+
+--Environemental level usage notes
+
+SET current_wh_name = (SELECT CURRENT_WAREHOUSE());
+
+CREATE OR REPLACE WAREHOUSE my_wh
+  WAREHOUSE_SIZE = 'XSMALL';
+
+USE WAREHOUSE IDENTIFIER($current_wh_name);
+
+--***********ALTER VIRTUAL WARWHOUSE *****************
+
+-- Rename warehouse wh1 to wh2:
+ALTER WAREHOUSE IF EXISTS wh1 RENAME TO wh2;
+
+ALTER WAREHOUSE my_wh RESUME;
+
+ALTER WAREHOUSE my_wh SET warehouse_size=MEDIUM;
+
+ALTER WAREHOUSE so_warehouse SET RESOURCE_CONSTRAINT = 'MEMORY_16X_x86';
+
+ALTER WAREHOUSE my_wh SET GENERATION = '2';
+
+-- How to describe a warehouse
+DESCRIBE WAREHOUSE my_warehouse;
+
+
+--***********Show VIRTUAL WARWHOUSE *****************
+
+SHOW WAREHOUSES LIKE '%MY%';
+
+--Show warehouses that you have been granted the MODIFY and OPERATE privileges on:
+
+SHOW WAREHOUSES WITH PRIVILEGES MODIFY, OPERATE;
+
+
+-- set the context by query
+
+use warehouse my_second_wh;
+
+use database my_own_db.public;
+
+use schema public;
+
+create or replace database my_own_db with comment='This is my first database';
+
+create or replace database MY_OWN_DB COMMENT='This is my first database';
+
+create or replace schema my_own_schema comment='This is my first schema';
+
+-- How to create a sample table in Snowflake
+
+create or replace table customer
+(
+customer_id number(10),
+first_name varchar,    -- 16MB  -- maximum 128 MB
+last_name varchar(1000),
+dob date, -- 'YYYY-MM-DD'
+city varchar
+);
+
+desc table customer;
+
+-- insert same sample data
+
+insert into customer values
+(1000,'NIC IT Academy','Chandra','2016-10-12','Chennai'),
+(1001,'Ram','Kumar',to_date('24-12-2015','dd-mm-yyyy'),'Pune');
+
+select * from customer;
+
+
