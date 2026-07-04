@@ -1,0 +1,148 @@
+In Snowflake Inc., compute is billed per second with a 60-second minimum each time the warehouse resumes.
+
+Question 1: 
+
+An X-SMALL virtual warehouse has AUTO_SUSPEND = 300 seconds and AUTO_RESUME = TRUE.
+A user executes a query that runs for 1 minute. No additional queries are submitted after the query completes.
+How long will compute credits be billed for this warehouse?
+
+A. 1 minute
+B. 5 minutes
+C. 6 minutes
+D. Only the 60-second minimum billing period
+
+
+Ans: 
+
+-- Query runtime (1 min) + Idle time before auto-suspend (5 min) = 6 minutes
+
+
+
+I started my vwh, it is running state, after 2 minutes, I submit a query, it runs for a minute, then what is the cost?
+
+Ans: 
+
+--2 min (pre-query idle)+1 min (query)+5 min (post-query idle)=8 minutes total
+
+
+I started my vwh, it is running state, after 2 minutes 20 seconds, I submit a query, it runs for a minute, then what is the cost?
+
+Ans: 
+--2 min 20 sec+1 min+5 min=8 min 20 sec
+
+
+Question 1: 
+
+A user creates a new Virtual Warehouse in Snowflake.
+
+At the moment of creation, before starting the warehouse, how much compute cost will be incurred?
+
+A. Full hourly cost based on warehouse size
+B. Pro-rated cost until the first query is executed
+C. No compute cost
+D. Minimum 60-second billing
+
+Ans: 
+
+In Snowflake, compute is billed only when a warehouse is in the RUNNING state.
+Creating a warehouse does not start it automatically (unless you explicitly resume or start it).
+Billing begins when the warehouse runs queries or is manually/resumed started.
+
+
+--=================================================================================================================
+
+Question: 
+
+How the storage cost is calculated? if I have used only 500 GB of data (uncompressed) for a month?
+
+Ans: 
+
+Snowflake storage is charged based on, compressed data size stored per month (in TB)
+
+Storage Cost=(Average Compressed TB)×Price per TB
+
+Time Travel / Fail-safe adds extra storage cost.
+
+Snowflake storage pricing is:
+=============================
+
+	Charged per TB per month
+
+	Calculated daily (average storage per day)
+
+	Based on compressed size, NOT raw/uncompressed size
+	
+In Snowflake, Typical compression ratio = 2x to 5x (depends on data type), Let’s assume average 3x compression.
+
+hence, 500 GB÷3= 167 GB = 0.167 TB
+
+lets assume, ~$23 per TB per month (Standard edition)
+
+Ans: 0.167×23≈$3.84 per month
+
+
+--=================================================================================================================
+
+Scenario 1: 
+
+Warehouse: XSMALL, 1 credit/hour
+
+Query activity:
+
+Daily ETL load: 30 minutes per day
+
+Ad-hoc analytics queries: 15 minutes per day
+
+Warehouse auto-suspends after 60 seconds idle
+
+Data Storage:
+
+Raw data ingested daily: 200 GB uncompressed
+
+Compression ratio: ~3x (typical for Snowflake)
+
+Retention: 30 days of historical data
+
+
+Compute Cost Calculation: 
+=========================
+
+1) Total Warehouse Running Time
+
+	Daily ETL: 30 min = 1800 sec
+
+	Ad-hoc queries: 15 min = 900 sec
+
+	Auto-suspend overhead: negligible (assume warehouse suspends immediately after last query for simplicity)
+
+	Total daily running time = 1800 + 900 = 2700 sec = 0.75 hours
+
+2)Compute Credits Used
+
+	Credits Used = Warehouse Size Factor × Seconds Used /3600
+
+	Credits Used= 1 x 2700/3600 = 0.75 credits per day
+
+3)Monthly Compute Cost
+
+	Assume 22 working days/month then 0.75 × 22 = 16.5 credits/month
+
+	If Snowflake credit cost = $3.50 per credit then 16.5 × 3.50 = $57.75 / month for compute
+
+
+Storage Cost Calculation:
+=========================
+
+1) Compressed Data Size
+
+	Daily data ingestion: 200 GB uncompressed
+
+	Compression ratio: 3x = 200 %3 ~ 67 GB per day (compressed)
+
+	Retention: 30 days, 67×30 ~ 2,010 GB ~ 2 TB
+
+2) Storage Cost
+
+	Snowflake storage cost = $23 per TB per month
+
+	2 TB×23 ~ $46/month
