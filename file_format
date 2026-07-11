@@ -1,0 +1,39 @@
+Three different ways to load the file to Snowflake
+===================================================
+
+1) Snowsight - Web UI
+
+2) Copy into
+
+3) Snowpipe
+
+
+-- create table
+
+create table CUSTOMER 
+(
+CUST_ID NUMBER,
+CUST_NAME VARCHAR(200),
+PHONE_NUMBER VARCHAR(200),
+DOB DATE,
+COUNTRY VARCHAR(200)
+);
+
+
+-- File Format Syntax
+
+CREATE OR REPLACE FILE FORMAT <db_name>.<schema_name>.<file_format_name>
+    TYPE = { CSV | JSON | PARQUET | AVRO | ORC | XML }
+    [format-specific options];
+
+--Sample file format
+
+CREATE OR REPLACE FILE FORMAT my_db.public.csv_ff
+TYPE = 'CSV'
+FIELD_DELIMITER = ','
+SKIP_HEADER = 1
+FIELD_OPTIONALLY_ENCLOSED_BY = '"'
+TRIM_SPACE = TRUE
+DATE_FORMAT = 'MM/DD/YYYY'
+REPLACE_INVALID_CHARACTERS = TRUE
+NULL_IF = ('\\N', 'NULL');
