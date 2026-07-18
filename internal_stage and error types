@@ -1,0 +1,103 @@
+--select the data from user_stage
+select $1,$2 from @~;
+
+-- How to copy data from stage to snowflake table;
+
+COPY INTO CORE_DB.CORE_SCHEMA.CUSTOMER_USER_STAGE
+FROM @~
+FILE_FORMAT = (TYPE = 'CSV' FIELD_OPTIONALLY_ENCLOSED_BY='"' SKIP_HEADER=1);
+
+
+
+COPY INTO "CORE_DB"."CORE_SCHEMA"."CUSTOMER"
+FROM (
+    SELECT $1, $2, $3, $4, $5
+    FROM @~ )
+FILES = ('2025-07-19T14:01:31.660Z/Customer_data.txt')
+FILE_FORMAT = (
+    TYPE=CSV,
+    SKIP_HEADER=1,
+    FIELD_DELIMITER=',',
+    TRIM_SPACE=TRUE,
+    FIELD_OPTIONALLY_ENCLOSED_BY='"',
+    REPLACE_INVALID_CHARACTERS=TRUE,
+    DATE_FORMAT='MM/DD/YYYY',
+    TIME_FORMAT=AUTO,
+    TIMESTAMP_FORMAT=AUTO
+) 
+ON_ERROR=ABORT_STATEMENT;
+
+
+
+--How to load multiple files
+
+copy into CORE_DB.CORE_SCHEMA.CUSTOMER_USER_STAGE
+from @~
+file_format = (TYPE = 'CSV' COMPRESSION = 'GZIP' FIELD_OPTIONALLY_ENCLOSED_BY='"' SKIP_HEADER=1)
+
+--specify pattern
+
+copy into CORE_DB.CORE_SCHEMA.CUSTOMER_USER_STAGE
+from @~
+file_format = (TYPE = 'CSV' COMPRESSION = 'GZIP' FIELD_OPTIONALLY_ENCLOSED_BY='"' SKIP_HEADER=1)
+pattern = '.*.csv'
+on_error = 'skip_file';
+
+
+COPY INTO CORE_DB.CORE_SCHEMA.CUSTOMER_USER_STAGE
+  FROM @~
+  FILE_FORMAT = (TYPE = 'CSV' COMPRESSION = 'GZIP' FIELD_OPTIONALLY_ENCLOSED_BY='"' SKIP_HEADER=1)
+  PATTERN='.*Customer_data_file_[1-5].csv.gz'
+  ON_ERROR = 'skip_file'
+  --PURGE=TRUE; 
+  
+  
+COPY INTO CORE_DB.CORE_SCHEMA.CUSTOMER_USER_STAGE
+  FROM @~
+  FILE_FORMAT = (TYPE = 'CSV' COMPRESSION = 'GZIP' FIELD_OPTIONALLY_ENCLOSED_BY='"' SKIP_HEADER=1)
+  PATTERN='.*Customer_data_file_[1-5].csv.gz'
+  ON_ERROR = 'skip_file'
+  PURGE=TRUE;
+
+
+-- Remove all the files from user stage;
+    
+REMOVE @~;  or -- rm @~;
+
+-- remove a particular file
+
+remove @~/file_name;
+
+--remove all csv file alone;
+
+REMOVE @~/.*\.csv;
+REMOVE @~ PATTERN = '.*\.csv';
+REMOVE @~ PATTERN = '.*\.csv.gz';
+
+-- remove pattern of file
+
+REMOVE @~ PATTERN = 'customer_.*\.gz';
+
+
+Diiferent ON_ERROR options in COPY_INTO option: 
+===============================================
+ABORT_STATEMENT - Default. If any error occurs, the entire load fails. No data is loaded.
+
+CONTINUE - Skip problematic rows and continue loading remaining rows. Errors are recorded in load metadata.
+
+SKIP_FILE - If any error occurs in a file, skip the entire file. Other files are processed.
+
+SKIP_FILE_<n> - Skip the file only if the number of errors ≤ n. Otherwise, skip the file.
+
+SKIP_FILE_NUM(n) - Same as above; newer form. Skip file if number of errors ≤ n
+
+SKIP_FILE_NUM => n - Used in COPY INTO <location> syntax with arrow (=>) notation. 
+
+
+Examples: 
+
+   COPY INTO my_table FROM @my_stage FILE_FORMAT = (TYPE = 'CSV') ON_ERROR = 'CONTINUE';
+   
+   ON_ERROR = 'SKIP_FILE_2'; OR -- ON_ERROR = 'SKIP_FILE_NUM(2)';
+   
+   
